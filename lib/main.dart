@@ -1,0 +1,101 @@
+import 'package:flutter/material.dart';
+
+//importing all screens
+import 'package:notifications_nav_app/home.dart';
+import 'package:notifications_nav_app/screens/test1.dart';
+import 'package:notifications_nav_app/screens/test2.dart';
+import 'package:notifications_nav_app/screens/test3.dart';
+import 'package:notifications_nav_app/screens/test4.dart';
+import 'package:notifications_nav_app/screens/test5.dart';
+import 'package:notifications_nav_app/screens/test6.dart';
+import 'package:notifications_nav_app/screens/test7.dart';
+import 'package:notifications_nav_app/screens/test8.dart';
+import 'package:notifications_nav_app/screens/test9.dart';
+import 'package:notifications_nav_app/screens/test10.dart';
+import 'package:notifications_nav_app/screens/test11.dart';
+import 'package:notifications_nav_app/screens/test12.dart';
+import 'package:notifications_nav_app/screens/test13.dart';
+import 'package:notifications_nav_app/screens/test14.dart';
+
+
+import 'services/notification_services.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+
+NotificationService _notificationService = NotificationService();
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await NotificationService.init();
+  
+  final NotificationAppLaunchDetails? notificationAppLaunchDetails = await flutterLocalNotificationsPlugin.getNotificationAppLaunchDetails();
+  
+  String initialRoute = '/';
+  if (notificationAppLaunchDetails?.didNotificationLaunchApp ?? false) {
+    String? selectedNotificationPayload = notificationAppLaunchDetails!.notificationResponse?.payload;
+    if (selectedNotificationPayload != null && selectedNotificationPayload.isNotEmpty) {
+      initialRoute = selectedNotificationPayload;
+      
+      // Handle notification tap when app is launched from notification
+      if (selectedNotificationPayload != 'restart_dialog') {
+        // Decrement days remaining
+        int? storedDays = await _notificationService.getDaysRemaining();
+        int currentDays = storedDays ?? 14;
+        int newDays = currentDays - 1;
+        
+        if (newDays >= 0) {
+          await _notificationService.setDaysRemaining(newDays);
+        }
+      }
+    }
+  }
+  runApp(MyApp(initialRoute: initialRoute));
+}
+
+class MyApp extends StatefulWidget {
+  final String initialRoute;
+  
+  const MyApp({super.key, required this.initialRoute});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  ThemeMode _themeMode = ThemeMode.system;
+
+  void toggleTheme() {
+    setState(() {
+      _themeMode = _themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      navigatorKey: NotificationService.navigatorKey,
+      title: 'Notification Nav App',
+      theme: ThemeData.light(useMaterial3: true),
+      darkTheme: ThemeData.dark(useMaterial3: true),
+      themeMode: _themeMode,
+      initialRoute: widget.initialRoute,
+      routes: {
+        '/': (context) => HomeScreen(toggleTheme: toggleTheme, themeMode: _themeMode),
+        '/test1': (context) => const Test1Screen(),
+        '/test2': (context) => const Test2Screen(),
+        '/test3': (context) => const Test3Screen(),
+        '/test4': (context) => const Test4Screen(),
+        '/test5': (context) => const Test5Screen(),
+        '/test6': (context) => const Test6Screen(),
+        '/test7': (context) => const Test7Screen(),
+        '/test8': (context) => const Test8Screen(),
+        '/test9': (context) => const Test9Screen(),
+        '/test10': (context) => const Test10Screen(),
+        '/test11': (context) => const Test11Screen(),
+        '/test12': (context) => const Test12Screen(),
+        '/test13': (context) => const Test13Screen(),
+        '/test14': (context) => const Test14Screen(),
+      },
+    );
+  }
+}
