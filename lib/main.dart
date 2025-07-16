@@ -17,6 +17,7 @@ import 'package:notifications_nav_app/screens/test12.dart';
 import 'package:notifications_nav_app/screens/test13.dart';
 import 'package:notifications_nav_app/screens/test14.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'services/notification_services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -25,28 +26,58 @@ NotificationService _notificationService = NotificationService();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await NotificationService.init();
+  
+  try {
+    debugPrint('Starting app initialization...');
+    await NotificationService.init();
+    debugPrint('Notification service initialized successfully');
+  } catch (e) {
+    debugPrint('Error initializing notification service: $e');
+  }
   
   final NotificationAppLaunchDetails? notificationAppLaunchDetails = await flutterLocalNotificationsPlugin.getNotificationAppLaunchDetails();
   
   String initialRoute = '/';
   if (notificationAppLaunchDetails?.didNotificationLaunchApp ?? false) {
     String? selectedNotificationPayload = notificationAppLaunchDetails!.notificationResponse?.payload;
+    debugPrint('App launched from notification with payload: $selectedNotificationPayload');
+
     if (selectedNotificationPayload != null && selectedNotificationPayload.isNotEmpty) {
-      initialRoute = selectedNotificationPayload;
-      
-      // Handle notification tap when app is launched from notification
-      if (selectedNotificationPayload != 'restart_dialog') {
-        // Decrement days remaining
-        int? storedDays = await _notificationService.getDaysRemaining();
-        int currentDays = storedDays ?? 14;
-        int newDays = currentDays - 1;
-        
-        if (newDays >= 0) {
-          await _notificationService.setDaysRemaining(newDays);
+      // Handle test notifications
+      if (selectedNotificationPayload.startsWith('test_notification/')) {
+        final parts = selectedNotificationPayload.split('/');
+        if (parts.length == 2 && parts[1].isNotEmpty) {
+          initialRoute = '/' + parts[1]; // e.g., /test1
+          debugPrint('Setting initial route to: $initialRoute for test notification');
+        } else {
+          initialRoute = '/';
+          debugPrint('Malformed test notification payload, defaulting to /');
+        }
+        // Do NOT decrement days for test notifications
+      } else {
+        initialRoute = selectedNotificationPayload;
+        debugPrint('Setting initial route to: $initialRoute');
+        // Handle notification tap when app is launched from notification
+        if (selectedNotificationPayload != 'restart_dialog') {
+          debugPrint('Processing regular notification payload: $selectedNotificationPayload');
+          // Decrement days remaining
+          int? storedDays = await _notificationService.getDaysRemaining();
+          int currentDays = storedDays ?? 14;
+          int newDays = currentDays - 1;
+
+          if (newDays >= 0) {
+            await _notificationService.setDaysRemaining(newDays);
+            debugPrint('Days remaining updated to: $newDays');
+          }
+        } else {
+          debugPrint('Processing restart dialog notification');
         }
       }
+    } else {
+      debugPrint('No valid notification payload found');
     }
+  } else {
+    debugPrint('App launched normally (not from notification)');
   }
   runApp(MyApp(initialRoute: initialRoute));
 }

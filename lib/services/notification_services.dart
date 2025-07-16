@@ -42,7 +42,9 @@ class NotificationService {
   String counterKey = 'dailyNotifyCounter';
   
   static Future<void> init() async {
-    tz.initializeTimeZones();
+    try {
+      debugPrint('Initializing notification service...');
+      tz.initializeTimeZones();
     
     // Use device's local timezone
     try {
@@ -101,17 +103,54 @@ class NotificationService {
       initSettings,
       onDidReceiveNotificationResponse: (NotificationResponse response) async {
         final payload = response.payload;
+        debugPrint('Notification tapped with payload: $payload');
+
+        // Handle test notifications: navigate, but do not decrement days
+        if (payload != null && payload.startsWith('test_notification/')) {
+          final parts = payload.split('/');
+          if (parts.length == 2 && parts[1].isNotEmpty) {
+            final route = '/' + parts[1]; // e.g., test1 -> /test1
+            try {
+              if (navigatorKey.currentState != null) {
+                navigatorKey.currentState!.pushNamed(route);
+                debugPrint('Navigated to $route for test notification');
+              } else {
+                debugPrint('Navigator state is null, cannot navigate for test notification');
+              }
+            } catch (e) {
+              debugPrint('Navigation error for test notification: $e');
+            }
+          } else {
+            debugPrint('Malformed test notification payload: $payload');
+          }
+          debugPrint('RETURNING after handling test notification, will NOT decrement days remaining');
+          return; // Make sure to return so decrement logic is NOT executed
+        }
+
         if (payload != null && payload.isNotEmpty) {
           // Handle restart dialog notification first
           if (payload == 'restart_dialog') {
-            _notificationService.showRestartDailyNotificationDialog(
-              navigatorKey.currentContext!,
-            );
+            debugPrint('Routing to restart dialog');
+            if (navigatorKey.currentContext != null) {
+              _notificationService.showRestartDailyNotificationDialog(
+                navigatorKey.currentContext!,
+              );
+            }
             return; // Exit early to avoid regular navigation logic
           }
           
           // Handle regular notification navigation
-          navigatorKey.currentState?.pushNamed(payload);
+          debugPrint('Routing to page: $payload');
+          try {
+            if (navigatorKey.currentState != null) {
+              navigatorKey.currentState!.pushNamed(payload);
+              debugPrint('Successfully navigated to: $payload');
+            } else {
+              debugPrint('Navigator state is null, cannot navigate');
+            }
+          } catch (e) {
+            debugPrint('Error navigating to $payload: $e');
+          }
           
           // Decrement days remaining
           int? storedDays = await _notificationService.getDaysRemaining();
@@ -120,23 +159,31 @@ class NotificationService {
           
           if (newDays >= 0) {
             await _notificationService.setDaysRemaining(newDays);
+            debugPrint('Days remaining updated to: $newDays');
             // Trigger UI refresh
             uiRefreshNotifier.value++;
           }
 
           // Check if this was the last notification (/test14)
           if (payload == '/test14') {
+            debugPrint('Last notification reached, setting completion flag');
             HomeScreen.allNotificationsDelivered.value = true;
           }
+        } else {
+          debugPrint('Notification payload is null or empty');
         }
       },
     );
+    } catch (e) {
+      debugPrint('Error initializing notification service: $e');
+    }
   }
 
 
-  Future<int?> getDaysRemaining() async {
+
+  Future<int> getDaysRemaining() async {
     prefs = await SharedPreferences.getInstance();
-    return prefs.getInt(counterKey);
+    return prefs.getInt(counterKey) ?? 0;
   }
   Future<void> setDaysRemaining(int count) async {
     prefs = await SharedPreferences.getInstance();
@@ -163,8 +210,24 @@ class NotificationService {
     await prefs.setBool('notificationsScheduled', scheduled);
   }
 
+  // Persist notification toggle state
+  static const String notificationToggleKey = 'notification_toggle_enabled';
+
+  Future<bool> getNotificationToggleState() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(notificationToggleKey) ?? false;
+  }
+
+  Future<void> setNotificationToggleState(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(notificationToggleKey, value);
+  }
+
   Future<void> cancelAllNotifications() async {
     await flutterLocalNotificationsPlugin.cancelAll();
+    await setDaysRemaining(0);
+    debugPrint('cancelAllNotifications: days remaining set to 0');
+    uiRefreshNotifier.value++;
   }
 
   // Get current timezone information
@@ -206,17 +269,25 @@ class NotificationService {
   void notificationTapBackground(NotificationResponse response) async {
     debugPrint('Background notification tapped with payload: ${response.payload}');
     
-    // Handle notification tap when app is closed
-    final payload = response.payload;
-    if (payload != null && payload.isNotEmpty && payload != 'restart_dialog') {
-      // Decrement days remaining
-      int? storedDays = await getDaysRemaining();
-      int currentDays = storedDays ?? 14;
-      int newDays = currentDays - 1;
-      
-      if (newDays >= 0) {
-        await setDaysRemaining(newDays);
+    try {
+      // Handle notification tap when app is closed
+      final payload = response.payload;
+      if (payload != null && payload.isNotEmpty && payload != 'restart_dialog') {
+        debugPrint('Processing background notification: $payload');
+        // Decrement days remaining
+        int? storedDays = await getDaysRemaining();
+        int currentDays = storedDays ?? 14;
+        int newDays = currentDays - 1;
+        
+        if (newDays >= 0) {
+          await setDaysRemaining(newDays);
+          debugPrint('Background: Days remaining updated to: $newDays');
+        }
+      } else {
+        debugPrint('Background: Invalid or restart dialog payload: $payload');
       }
+    } catch (e) {
+      debugPrint('Error handling background notification: $e');
     }
   }
   static Future<void> showNotification({
@@ -225,28 +296,36 @@ class NotificationService {
     required String body,
     required String payload,
   }) async {
-    const AndroidNotificationDetails androidDetails =
-        AndroidNotificationDetails(
-      'main_channel',
-      'Main Channel',
-      importance: Importance.max,
-      priority: Priority.high,
-    );
+    try {
+      debugPrint('Showing notification: $title with payload: $payload');
+      
+      const AndroidNotificationDetails androidDetails =
+          AndroidNotificationDetails(
+        'main_channel',
+        'Main Channel',
+        importance: Importance.max,
+        priority: Priority.high,
+      );
 
-    const DarwinNotificationDetails iosDetails = DarwinNotificationDetails();
+      const DarwinNotificationDetails iosDetails = DarwinNotificationDetails();
 
-    const NotificationDetails notificationDetails = NotificationDetails(
-      android: androidDetails,
-      iOS: iosDetails,
-    );
+      const NotificationDetails notificationDetails = NotificationDetails(
+        android: androidDetails,
+        iOS: iosDetails,
+      );
 
-    await flutterLocalNotificationsPlugin.show(
-      id,
-      title,
-      body,
-      notificationDetails,
-      payload: payload,
-    );
+      await flutterLocalNotificationsPlugin.show(
+        id,
+        title,
+        body,
+        notificationDetails,
+        payload: payload,
+      );
+      
+      debugPrint('Notification shown successfully');
+    } catch (e) {
+      debugPrint('Error showing notification: $e');
+    }
   }
 
   Future<void> showDailyNotifications({

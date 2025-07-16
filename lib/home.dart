@@ -106,6 +106,8 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Load toggle state on first build
+    _loadNotificationToggleStateOnce();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       appBar: AppBar(
@@ -162,7 +164,7 @@ class HomeScreen extends StatelessWidget {
                       id: 1,
                       title: virtues[randomInt],
                       body: definitions[randomInt],
-                      payload: routes[randomInt],
+                      payload: 'test_notification/' + virtues[randomInt],
                     );
                   },
                   child: Text("Send Notification"),
@@ -191,7 +193,8 @@ class HomeScreen extends StatelessWidget {
                         } else if (snapshot.hasError) {
                           return Text('Error');
                         } else {
-                          int daysRemaining = snapshot.data ?? 14;
+                          int daysRemaining = snapshot.data ?? 0;
+                          debugPrint('UI: Days remaining loaded from SharedPreferences: ' + daysRemaining.toString());
                           return Text('Days remaining: $daysRemaining');
                         }
                       },
@@ -230,6 +233,8 @@ class HomeScreen extends StatelessWidget {
                           value: value,
                           onChanged: (newValue) async {
                             _notificationEnabled.value = newValue;
+                            // Persist the toggle state
+                            await _notificationService.setNotificationToggleState(newValue);
                             if (newValue) {
                               // Show Cupertino date picker to select start date and time
                               final DateTime now = DateTime.now();
@@ -268,6 +273,7 @@ class HomeScreen extends StatelessWidget {
                                             mode: CupertinoDatePickerMode.dateAndTime,
                                             initialDateTime: now,
                                             minimumDate: now,
+                                            use24hFormat: false,
                                             maximumDate: now.add(const Duration(days: 365)),
                                             onDateTimeChanged: (DateTime newDateTime) {
                                               tempDateTime = newDateTime;
@@ -284,7 +290,6 @@ class HomeScreen extends StatelessWidget {
                                 // Always start at 14 when enabling notifications
                                 await _notificationService.setDaysRemaining(14);
                                 uiRefreshNotifier.value++;
-                                
                                 // Schedule notifications from the selected date and time
                                 await _notificationService.showDailyNotificationsFromDate(
                                   id: 0,
@@ -293,7 +298,6 @@ class HomeScreen extends StatelessWidget {
                                   payloads: routes,
                                   startDate: selectedDateTime,
                                 );
-                                
                                 // Check if context is still mounted before using it
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
@@ -303,8 +307,11 @@ class HomeScreen extends StatelessWidget {
                                   );
                                 }
                               } else {
-                                // User cancelled, turn off the switch
+                                // User cancelled, turn off the switch and reset days to 0
                                 _notificationEnabled.value = false;
+                                await _notificationService.setNotificationToggleState(false);
+                                await _notificationService.setDaysRemaining(0);
+                                uiRefreshNotifier.value++;
                               }
                             } else {
                               // Clear scheduled state when turning off
@@ -390,6 +397,16 @@ class HomeScreen extends StatelessWidget {
         return const Test14Screen();
       default:
         return const Test1Screen();
+    }
+  }
+
+  // Add this function to load the toggle state only once
+  void _loadNotificationToggleStateOnce() {
+    // Only load if the value is still the default (false) and not already loaded
+    if (!_notificationEnabled.value) {
+      NotificationService().getNotificationToggleState().then((savedValue) {
+        _notificationEnabled.value = savedValue;
+      });
     }
   }
 }
