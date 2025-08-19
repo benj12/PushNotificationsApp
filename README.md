@@ -23,6 +23,9 @@ PushNotificationsApp is an iOS app that allows you to schedule daily notificatio
 
 <img width="389" height="783" alt="timeChangePushNotifApp" src="https://github.com/user-attachments/assets/3c80e347-2d4f-4e7d-988d-48453cc4dbb8" />
 
+<img width="390" height="783" alt="scheduleNotificationsPushNotifApp" src="https://github.com/user-attachments/assets/e4ae9372-f93c-4665-996f-e8c5b9e566a3" />
+
+
 
 
 
