@@ -1,7 +1,7 @@
 # PushNotificationsApp
 
-A Flutter project exploring the functionality of local push notifications.
+PushNotificationsApp is an app that allows the user to schedule daily notifications for 14 days with a countdown.
 
-## Getting Started
+
 
 
