@@ -8,8 +8,10 @@ PushNotificationsApp is an app that allows the user to schedule daily notificati
 
 ## About
 
+PushNotificationsApp is an iOS app that allows you to schedule daily notifications for 14 days based off of timezone with a countdown. It also has the capabilities of changing the display to light mode or dark mode based off of user preferences.
 
 ## Key Features
+
 
 
 ## Screenshots
