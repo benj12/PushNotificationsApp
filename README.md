@@ -19,6 +19,8 @@ PushNotificationsApp is an iOS app that allows you to schedule daily notificatio
 ## Screenshots
 
 <img width="300" height="600" alt="Simulator Screenshot - iPhone 15 Pro Max - 2025-08-18 at 21 18 57" src="https://github.com/user-attachments/assets/e34d32db-7b91-46db-891f-9f6f7bdb15bf" />
+<img width="300" height="1000" alt="Simulator Screenshot - iPhone 15 Pro Max - 2025-08-18 at 21 21 17" src="https://github.com/user-attachments/assets/fd551a3f-e71c-410f-915a-8eb095af0ac2" />
+
 
 
 
