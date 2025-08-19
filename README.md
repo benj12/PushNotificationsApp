@@ -6,13 +6,13 @@ PushNotificationsApp is an app that allows the user to schedule daily notificati
 - [Key Features](#key-features)
 - [Screenshots](#screenshots)
 
-# About
+## About
 
 
-# Key Features
+## Key Features
 
 
-# Screenshots
+## Screenshots
 
 
 
