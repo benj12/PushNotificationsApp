@@ -17,8 +17,8 @@ PushNotificationsApp is an iOS app that allows you to schedule daily notificatio
 - Light mode/dark mode based off of system preferences for iPhone
 
 ## Screenshots
+<img width="390" height="783" alt="homeScreenPushNotifApp" src="https://github.com/user-attachments/assets/1ddc56ef-e51a-4729-9ff0-6569edb58330" />
 
-<img width="390" height="783" alt="homeScreenPushNotifApp" src="https://github.com/user-attachments/assets/47d2e67c-66b6-4d4e-970b-9d079f6f5d7c" />
 <img width="390" height="782" alt="test1ScreenShotForPushNotificationsApp" src="https://github.com/user-attachments/assets/10bf107e-bc63-4a46-9edd-6198265bb1be" />
 
 
