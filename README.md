@@ -12,7 +12,9 @@ PushNotificationsApp is an iOS app that allows you to schedule daily notificatio
 
 ## Key Features
 
-
+- Daily push notifications locally
+- Daily countdown
+- Light mode/dark mode based off of system preferences for iPhone
 
 ## Screenshots
 
